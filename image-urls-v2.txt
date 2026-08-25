@@ -1,0 +1,20 @@
+# New Image URLs v2
+
+## Icons (flat illustrations)
+icon-visados: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-visados-CZGAQJNJUhJHH7FxgjBRWg.webp
+icon-nacionalidad: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-nacionalidad-k5rtmAENNYwAPzwbQUth8u.webp
+icon-proteccion: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-proteccion-TLDi73aFJ6GU49PGkymkfy.webp
+icon-documentos: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-documentos-c8BndfDKXvL5fRNQrqk67E.webp
+icon-asesoria: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-asesoria-RS9NCnrvFrsmGJnGW78oWb.webp
+icon-recursos: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/icon-recursos-G6ig9TPt3mQJP89f4TXusx.webp
+
+## Hero & About (European style)
+hero-european: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/hero-european-gYnvYcPGvEEYQrwSCxgqbr.webp
+about-european: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/about-european-TjUcMekAGTUewJs4F7FKjh.webp
+
+## Previous images (still available)
+hero-legal: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/hero-legal-kkjNAhQKBrsAHS4KKeDo5y.webp
+services-immigration: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/services-immigration-ATvviKHbLhcPzicRebMdTw.webp
+services-documents: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/services-documents-XJXB7HxnW3cPFmQxQPQN2o.webp
+about-team: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/about-team-zzJVZvjPBKwBVPCjxTHJZi.webp
+services-videocall: https://d2xsxph8kpxj0f.cloudfront.net/310519663477079238/EPsBEv5tgtumuds5mHeEv6/services-videocall-UBSZXHnXZP4Tn9qVGpjPHi.webp

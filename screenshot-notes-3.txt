@@ -1,0 +1,10 @@
+Reservas page looks great:
+- Calendar visual is showing correctly with April 2026
+- Weekends (sá, do) are disabled/greyed out
+- Past dates disabled
+- Time slots showing morning (09:00-12:30) and afternoon (16:00-18:30)
+- Service dropdown present
+- Sidebar shows all 5 categories with service counts
+- "¿Cómo funciona?" section visible
+- Form fields for name, email, phone, message
+- No TypeScript errors

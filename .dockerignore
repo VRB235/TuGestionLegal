@@ -1,0 +1,14 @@
+node_modules
+.pnpm-store
+.git
+.manus
+.manus-logs
+dist
+*.md
+screenshot-notes*
+image-urls*
+.env
+.env.*
+!.env.example
+Dockerfile
+.dockerignore

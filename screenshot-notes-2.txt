@@ -1,0 +1,2 @@
+Screenshot 2: Homepage looks great. No TS errors. Server running. All features compiled.
+Now need to check the Reservas page visually and write tests.

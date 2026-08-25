@@ -1,0 +1,28 @@
+# MySQL local para Tu Gestión Legal (Fase 0/1)
+# Requisitos: Docker Desktop en ejecución
+# Uso: docker compose up -d
+# Parar: docker compose down
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: tgl-mysql
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_DATABASE: tu_gestion_legal
+      MYSQL_USER: tgl
+      MYSQL_PASSWORD: tgl_secret
+    volumes:
+      - tgl_mysql_data:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot_secret"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  tgl_mysql_data:
