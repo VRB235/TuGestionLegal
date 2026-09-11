@@ -11,10 +11,12 @@ services:
     runtime: docker
     dockerfilePath: ./Dockerfile
     plan: free
-    healthCheckPath: /
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV
         value: production
+      - key: PUBLIC_APP_URL
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: JWT_SECRET
@@ -29,6 +31,8 @@ services:
         sync: false
       - key: ADMIN_NAME
         value: Administrador
+      - key: CRON_SECRET
+        generateValue: true
       - key: GOOGLE_PLACES_API_KEY
         sync: false
       - key: GOOGLE_PLACE_ID

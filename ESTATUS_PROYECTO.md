@@ -1,68 +1,47 @@
 # Estatus del proyecto — Tu Gestión Legal
 
-**Fecha:** 11 de septiembre de 2026 (actualizado tras Fase 2)  
+**Fecha:** 11 de septiembre de 2026  
 **Dominio:** `tugestionlegal.es`  
 **Repo:** `https://github.com/VRB235/TuGestionLegal`  
-**Branch:** `main`
+**Branch:** `main` (ahead of origin tras commits Fase 2/3)
 
 ---
 
 ## Veredicto
 
-Producto web **muy avanzado**. **Fase 2 cerrada** (independencia operativa de Manus Forge: auth password, storage S3/local, cron propio, Vite limpio).
+Producto **listo para desplegar**. Fase 2 cerrada. **Fase 3 en preparación de código** — falta push + Railway + DNS + checklist humano.
 
-Pendiente principal: **deploy / dominio** y luego **Stripe (Fase 4)**.
-
----
-
-## Stack
-
-React 19 · Express · tRPC · Drizzle · MySQL · Nodemailer · Vite · Vitest  
-(Origen: plantilla Manus AI; runtime ya no requiere Forge)
+Pendiente de producto online: Stripe (Fase 4).
 
 ---
 
-## Roadmap operativo
+## Roadmap
 
-| Fase | Descripción | Estado |
-|------|-------------|--------|
-| **0** | Preparación | ✅ |
-| **1** | Arranque local | ✅ |
-| **2** | Endurecer (auth, storage, jobs, Vite) | ✅ Cerrada 11/09/2026 |
-| **Deploy preliminar** | Railway / Render | 🟡 Archivos listos; checklist vacío |
-| **3** | Producción en dominio | ❌ |
-| **4** | Pagos Stripe | ❌ |
-| **5** | Mejoras post-lanzamiento | ⏳ |
-
-### Fase 2 — entregado
-
-- Storage: S3/R2 o `./uploads` (`server/storage.ts`)
-- Jobs: timers internos + `CRON_SECRET` en `/api/scheduled/*`
-- Auth: `/login` password; OAuth Manus deshabilitado sin `OAUTH_SERVER_URL`
-- Vite: sin plugins Manus
-- Stubs Forge legacy (llm, voice, map proxy) sin uso en producto
-
----
-
-## Estado de este workspace
-
-| Ítem | Estado |
+| Fase | Estado |
 |------|--------|
-| Cambios Fase 2 en código | ✅ Aplicados |
-| `.env` / `node_modules` / Docker | ⚠️ Pueden faltar en este checkout — restaurar para verificar |
+| **0–1** Local | ✅ |
+| **2** Endurecer (auth, storage, jobs, Vite) | ✅ Commit `feat: close phase 2…` |
+| **3** Producción | 🟡 Código/docs listos (`DEPLOY.md`, `/api/health`); deploy pendiente |
+| **4** Stripe | ❌ |
+| **5** Mejoras | ⏳ |
 
----
+### Fase 3 — hecho en repo
 
-## Siguientes pasos
+- `GET /api/health` (JSON + estado DB)
+- `PUBLIC_APP_URL` para enlaces de reserva/newsletter
+- `DEPLOY.md`, `railway.toml` → health `/api/health`, `render.yaml` actualizado
 
-1. `pnpm install` + `.env` (ver `.env.example`: `CRON_SECRET`, `PUBLIC_APP_URL`, admin) + `pnpm test` / `pnpm build`
-2. Deploy preliminar Railway **o** Fase 3 (DNS + prod)
-3. Fase 4 Stripe cuando haga falta cobro online
+### Fase 3 — falta (humano / cuenta)
+
+1. `git push` a GitHub  
+2. Proyecto Railway + MySQL + variables  
+3. DNS dominio  
+4. Checklist post-deploy en `DEPLOY.md`
 
 ---
 
 ## Fuentes
 
+- `DEPLOY.md`
 - `Plan_Paso_a_Paso_Tu_Gestion_Legal.md`
 - `todo.md`
-- Código `server/storage.ts`, `server/jobs.ts`, `server/_core/cronAuth.ts`

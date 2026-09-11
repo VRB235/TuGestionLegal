@@ -99,6 +99,27 @@ async function startServer() {
   // OAuth callback under /api/oauth/callback (501 if Manus OAuth disabled)
   registerOAuthRoutes(app);
 
+  // Healthcheck for Railway/Render (DB ping best-effort)
+  app.get("/api/health", async (_req, res) => {
+    let database: "ok" | "unavailable" = "unavailable";
+    try {
+      const { getDb } = await import("../db");
+      const db = await getDb();
+      database = db ? "ok" : "unavailable";
+    } catch {
+      database = "unavailable";
+    }
+    const body = {
+      ok: true,
+      status: "up",
+      database,
+      storage: getStorageDriver(),
+      time: new Date().toISOString(),
+    };
+    // 200 even if DB down so the container can boot; monitor `database` field
+    res.status(200).json(body);
+  });
+
   // Booking action route (confirm/reject from email)
   app.get("/api/booking-action", async (req, res) => {
     try {

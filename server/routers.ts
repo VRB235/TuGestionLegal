@@ -36,6 +36,7 @@ import { sdk } from "./_core/sdk";
 import { toPublicUser, verifyPassword } from "./password";
 import { eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
+import { resolvePublicBaseUrl } from "./publicUrl";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
@@ -138,17 +139,12 @@ export const appRouter = router({
         const bookingId = newBooking?.id || 0;
         console.log("[Booking] Created with ID:", bookingId);
 
-        // Build confirm/reject URLs - use published domain for production
-        const origin = ctx.req.headers.origin || ctx.req.headers.referer?.replace(/\/$/, "") || "";
-        // Prefer the custom domain for email links
-        const baseUrl = origin.includes("tugestionlegal.es")
-          ? "https://www.tugestionlegal.es"
-          : origin.includes("manus.space")
-          ? origin.replace(/\/$/, "")
-          : origin.replace(/\/$/, "") ||
-            (process.env.NODE_ENV === "development"
-              ? `http://localhost:${process.env.PORT || "3000"}`
-              : "https://www.tugestionlegal.es");
+        // Build confirm/reject URLs — PUBLIC_APP_URL en prod; Origin en local
+        const origin =
+          ctx.req.headers.origin ||
+          ctx.req.headers.referer?.replace(/\/$/, "") ||
+          "";
+        const baseUrl = resolvePublicBaseUrl({ originHeader: origin });
         const confirmUrl = `${baseUrl}/api/booking-action?id=${bookingId}&action=confirm`;
         const rejectUrl = `${baseUrl}/api/booking-action?id=${bookingId}&action=reject`;
         console.log("[Booking] Action URLs base:", baseUrl);

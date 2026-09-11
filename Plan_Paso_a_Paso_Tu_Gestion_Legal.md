@@ -298,41 +298,36 @@ Trabajar estos ítems uno por uno; cada uno es un PR/commit pequeño.
 
 ## Fase 3 — Despliegue en servidor
 
+**Progreso:** 🟡 **Preparación de código lista** (2026-09-11) — falta acción humana: push + Railway + DNS + checklist.
+
+Ver guía operativa: [`DEPLOY.md`](./DEPLOY.md).
+
 ### 3.1 Elegir hosting
 
-Opciones razonables:
-
-- **VPS** (Hetzner, Contabo, DigitalOcean): control total, barato, más ops.
-- **PaaS** (Railway, Render, Fly.io): más rápido si no se quiere administrar Linux.
-
-Requisitos: Node 22, MySQL gestionado o en el mismo VPS, HTTPS, proceso persistente (o cron externo).
+- **Preferido:** Railway (Docker + MySQL plugin) — ya hay `Dockerfile` + `railway.toml`.
+- Alternativa: Render (`render.yaml`) + MySQL externo.
 
 ### 3.2 Preparar producción
 
-1. Dominio `tugestionlegal.es` → DNS A/CNAME al servidor.
-2. TLS (Caddy/Nginx + Let’s Encrypt).
-3. `.env` de producción (valores reales, no test):
-   - `DATABASE_URL`
-   - `JWT_SECRET` (nuevo, no el de local)
-   - `SMTP_*`
-   - Auth admin / S3
-   - `NODE_ENV=production`
-4. Migraciones en la DB de prod (mismo esquema).
-5. Seed: usuario admin + 1–3 posts de blog si la DB viene vacía (las imágenes CDN Manus pueden seguir funcionando mientras el CDN viva).
+1. Dominio `tugestionlegal.es` → DNS CNAME/A al host (tras primera URL Railway).
+2. TLS: lo gestiona Railway/Render en el dominio custom.
+3. Variables: ver tabla en `DEPLOY.md` (`PUBLIC_APP_URL`, `JWT_SECRET` nuevo, SMTP, admin, `CRON_SECRET`).
+4. Migraciones: `Dockerfile` / `start:migrate` ejecuta `drizzle-kit migrate`.
+5. Seed admin: automático con `ADMIN_EMAIL` / `ADMIN_PASSWORD` al arrancar.
 
 ### 3.3 Deploy pipeline mínimo
 
-1. Build en CI o en el server: `pnpm install --frozen-lockfile && pnpm build`.
-2. Arranque con PM2/systemd: `node dist/index.js` (o `pnpm start`).
-3. Reverse proxy → puerto interno.
-4. Healthcheck: home + un endpoint tRPC simple.
+1. ✅ Build Docker (`pnpm build` en imagen).
+2. ✅ Arranque `node dist/index.js` (+ migrate).
+3. HTTPS vía plataforma.
+4. ✅ Healthcheck: `GET /api/health`.
 
 ### 3.4 Checklist post-deploy
 
 - [ ] HTTPS OK
 - [ ] Formulario contacto envía email
 - [ ] Reserva crea fila en `bookings`
-- [ ] Email admin con enlaces al **dominio real** (`tugestionlegal.es`)
+- [ ] Email admin con enlaces al **dominio real**
 - [ ] Confirm/reject actualiza status y avisa al cliente
 - [ ] Admin login en prod
 - [ ] WhatsApp / redes / GA (cuando exista `VITE_GA_MEASUREMENT_ID`)
@@ -460,4 +455,4 @@ Al terminar cada sesión: anotar *qué funciona / qué sigue roto / qué secreto
 
 ## Próximo paso concreto
 
-**Fase 2 cerrada.** Siguiente: **deploy preliminar** (Railway) o **Fase 3** (dominio + prod), luego **Fase 4** (Stripe).
+**Fase 3 en curso:** push a GitHub → Railway (MySQL + vars) → DNS `tugestionlegal.es` → checklist en `DEPLOY.md`.

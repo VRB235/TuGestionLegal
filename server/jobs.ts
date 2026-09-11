@@ -3,6 +3,8 @@
  * Ejecutables por HTTP (/api/scheduled/...) o por timers del proceso Node.
  */
 
+import { resolvePublicBaseUrl } from "./publicUrl";
+
 let lastNewsletterWeekKey = "";
 
 function spainNowParts(): { ymd: string; dow: number; hour: number } {
@@ -105,7 +107,7 @@ export async function runSendNewsletter(): Promise<Record<string, unknown>> {
     return { ok: true, skipped: true, reason: "no_subscribers" };
   }
 
-  const siteUrl = "https://www.tugestionlegal.es";
+  const siteUrl = resolvePublicBaseUrl();
   const result = await sendWeeklyNewsletter(subscribers, posts, siteUrl);
   console.log(
     `[Newsletter] Weekly send complete. Sent: ${result.sent}, Failed: ${result.failed}`
