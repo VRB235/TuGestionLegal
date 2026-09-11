@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import path from "path";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -7,6 +8,13 @@ import { registerOAuthRoutes } from "./oauth";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { serveStatic, setupVite } from "./vite";
+import { assertCronAuthorized } from "./cronAuth";
+import { getStorageDriver } from "../storage";
+import {
+  runSendNewsletter,
+  runSendReminders,
+  startInternalJobTimers,
+} from "../jobs";
 
 function isPortAvailable(port: number): Promise<boolean> {
   return new Promise(resolve => {
@@ -82,7 +90,13 @@ async function startServer() {
   // Configure body parser with larger size limit for file uploads
   app.use(express.json({ limit: "50mb" }));
   app.use(express.urlencoded({ limit: "50mb", extended: true }));
-  // OAuth callback under /api/oauth/callback
+
+  // Local storage files (when S3 is not configured)
+  const uploadsDir = path.resolve(process.cwd(), "uploads");
+  app.use("/uploads", express.static(uploadsDir));
+  console.log(`[Storage] driver=${getStorageDriver()} uploadsDir=${uploadsDir}`);
+
+  // OAuth callback under /api/oauth/callback (501 if Manus OAuth disabled)
   registerOAuthRoutes(app);
 
   // Booking action route (confirm/reject from email)
@@ -141,53 +155,14 @@ async function startServer() {
   // Scheduled: 24h reminder emails for confirmed bookings
   app.post("/api/scheduled/sendReminders", async (req, res) => {
     try {
-      const { sdk } = await import("./sdk");
-      const user = await sdk.authenticateRequest(req);
-      if (!(user as any).isCron || !(user as any).taskUid) {
-        return res.status(403).json({ error: "cron-only" });
-      }
-
-      const { getConfirmedBookingsForReminder, markReminderSent } = await import("../db");
-      const { sendReminderToClient } = await import("../email");
-
-      // Calculate tomorrow's date in Spain timezone (UTC+1/+2)
-      const now = new Date();
-      // Use a simple offset: Spain is UTC+2 in summer, UTC+1 in winter
-      const spainOffset = now.getMonth() >= 2 && now.getMonth() <= 9 ? 2 : 1;
-      const spainNow = new Date(now.getTime() + spainOffset * 60 * 60 * 1000);
-      const tomorrow = new Date(spainNow);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      const targetDate = tomorrow.toISOString().split("T")[0]; // yyyy-MM-dd
-
-      console.log(`[Reminder] Checking confirmed bookings for ${targetDate}`);
-      const bookingsToRemind = await getConfirmedBookingsForReminder(targetDate);
-      console.log(`[Reminder] Found ${bookingsToRemind.length} bookings needing reminder`);
-
-      let sent = 0;
-      let failed = 0;
-      for (const booking of bookingsToRemind) {
-        const success = await sendReminderToClient({
-          clientName: booking.name,
-          clientEmail: booking.email,
-          serviceType: booking.serviceType,
-          date: booking.date,
-          time: booking.time,
-        });
-        if (success) {
-          await markReminderSent(booking.id);
-          sent++;
-        } else {
-          failed++;
-        }
-      }
-
-      res.json({ ok: true, targetDate, total: bookingsToRemind.length, sent, failed });
+      assertCronAuthorized(req);
+      const result = await runSendReminders();
+      res.json(result);
     } catch (err: any) {
+      const status = err?.status || 500;
       console.error("[Reminder] Error:", err);
-      res.status(500).json({
+      res.status(status).json({
         error: err.message || "Unknown error",
-        stack: err.stack,
-        context: { url: req.url, taskUid: (err as any).taskUid },
         timestamp: new Date().toISOString(),
       });
     }
@@ -196,35 +171,13 @@ async function startServer() {
   // Scheduled: Weekly newsletter every Monday
   app.post("/api/scheduled/sendNewsletter", async (req, res) => {
     try {
-      const { sdk } = await import("./sdk");
-      const user = await sdk.authenticateRequest(req);
-      if (!(user as any).isCron || !(user as any).taskUid) {
-        return res.status(403).json({ error: "cron-only" });
-      }
-
-      const { getRecentPublishedPosts, getNewsletterSubscribers } = await import("../db");
-      const { sendWeeklyNewsletter } = await import("../email");
-
-      const posts = await getRecentPublishedPosts(7);
-      if (posts.length === 0) {
-        console.log("[Newsletter] No new posts this week, skipping.");
-        return res.json({ ok: true, skipped: true, reason: "no_new_posts" });
-      }
-
-      const subscribers = await getNewsletterSubscribers();
-      if (subscribers.length === 0) {
-        console.log("[Newsletter] No active subscribers, skipping.");
-        return res.json({ ok: true, skipped: true, reason: "no_subscribers" });
-      }
-
-      const siteUrl = "https://www.tugestionlegal.es";
-      const result = await sendWeeklyNewsletter(subscribers, posts, siteUrl);
-
-      console.log(`[Newsletter] Weekly send complete. Sent: ${result.sent}, Failed: ${result.failed}`);
-      res.json({ ok: true, ...result, postsCount: posts.length, subscribersCount: subscribers.length });
+      assertCronAuthorized(req);
+      const result = await runSendNewsletter();
+      res.json(result);
     } catch (err: any) {
+      const status = err?.status || 500;
       console.error("[Newsletter] Error:", err);
-      res.status(500).json({
+      res.status(status).json({
         error: err.message || "Unknown error",
         timestamp: new Date().toISOString(),
       });
@@ -257,6 +210,9 @@ async function startServer() {
   if (port !== preferredPort) {
     console.log(`Port ${preferredPort} is busy, using port ${port} instead`);
   }
+
+  // Jobs without Manus: in-process timers + optional external cron hitting /api/scheduled/*
+  startInternalJobTimers();
 
   server.listen(port, "0.0.0.0", () => {
     console.log(`Server running on http://0.0.0.0:${port}/`);
