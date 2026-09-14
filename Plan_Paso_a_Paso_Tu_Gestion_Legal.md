@@ -298,7 +298,7 @@ Trabajar estos ítems uno por uno; cada uno es un PR/commit pequeño.
 
 ## Fase 3 — Despliegue en servidor
 
-**Progreso:** 🟡 **Preparación de código lista** (2026-09-11) — falta acción humana: push + Railway + DNS + checklist.
+**Progreso:** 🟡 **~85% en Railway** (2026-09-14) — app live; DNS/email/backup pendientes. Ver `DEPLOY.md`.
 
 Ver guía operativa: [`DEPLOY.md`](./DEPLOY.md).
 

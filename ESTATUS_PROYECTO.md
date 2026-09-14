@@ -1,17 +1,15 @@
 # Estatus del proyecto — Tu Gestión Legal
 
-**Fecha:** 11 de septiembre de 2026  
-**Dominio:** `tugestionlegal.es`  
-**Repo:** `https://github.com/VRB235/TuGestionLegal`  
-**Branch:** `main` (ahead of origin tras commits Fase 2/3)
+**Fecha:** 14 de septiembre de 2026  
+**Repo:** https://github.com/VRB235/TuGestionLegal (`58f56a4`)  
+**URL prod:** https://web-production-8a7ae.up.railway.app
 
 ---
 
 ## Veredicto
 
-Producto **listo para desplegar**. Fase 2 cerrada. **Fase 3 en preparación de código** — falta push + Railway + DNS + checklist humano.
-
-Pendiente de producto online: Stripe (Fase 4).
+**Fase 3 operativa en Railway** (app + MySQL + reservas + confirm/reject + contacto en DB).  
+Aparcados: **DNS custom**, **email** (Resend o Pro), **backup automático**, **Stripe (Fase 4)**.
 
 ---
 
@@ -19,29 +17,26 @@ Pendiente de producto online: Stripe (Fase 4).
 
 | Fase | Estado |
 |------|--------|
-| **0–1** Local | ✅ |
-| **2** Endurecer (auth, storage, jobs, Vite) | ✅ Commit `feat: close phase 2…` |
-| **3** Producción | 🟡 Código/docs listos (`DEPLOY.md`, `/api/health`); deploy pendiente |
+| **0–2** | ✅ |
+| **3** Producción | 🟡 ~85% — live en Railway; DNS/email/backup pendientes |
 | **4** Stripe | ❌ |
 | **5** Mejoras | ⏳ |
 
-### Fase 3 — hecho en repo
+### Fase 3 — hecho
+- Deploy MySQL + web, health OK, login, reservas en DB
+- Confirm id=1 / reject id=2 vía `/api/booking-action`
+- Contacto `contact.send` OK en DB
+- Código Resend listo (`EMAIL_RESEND.md`) — falta API key
+- Dominio Railway `www` creado — falta Cloudflare (`DNS_RAILWAY.md`)
 
-- `GET /api/health` (JSON + estado DB)
-- `PUBLIC_APP_URL` para enlaces de reserva/newsletter
-- `DEPLOY.md`, `railway.toml` → health `/api/health`, `render.yaml` actualizado
-
-### Fase 3 — falta (humano / cuenta)
-
-1. `git push` a GitHub  
-2. Proyecto Railway + MySQL + variables  
-3. DNS dominio  
-4. Checklist post-deploy en `DEPLOY.md`
+### Pendiente corto
+1. DNS Cloudflare (cuando toque)
+2. `RESEND_API_KEY` + prueba email
+3. Activar/documentar backup MySQL en panel
+4. **Fase 4:** Stripe
 
 ---
 
 ## Fuentes
 
-- `DEPLOY.md`
-- `Plan_Paso_a_Paso_Tu_Gestion_Legal.md`
-- `todo.md`
+- `DEPLOY.md` · `DNS_RAILWAY.md` · `EMAIL_RESEND.md`
