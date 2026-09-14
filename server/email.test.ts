@@ -1,22 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { verifySmtp } from "./email";
+import { getMailDriver, verifyMail } from "./mailer";
 
-describe("SMTP Email Configuration", () => {
+describe("Mail configuration", () => {
+  const hasResend = Boolean(process.env.RESEND_API_KEY);
   const hasSmtp = Boolean(process.env.SMTP_USER && process.env.SMTP_PASS);
 
-  it.skipIf(!hasSmtp)(
-    "verifies SMTP credentials are valid and can connect to Gmail",
+  it.skipIf(!hasResend && !hasSmtp)(
+    "verifies configured mail transport",
     async () => {
-      const result = await verifySmtp();
+      expect(["resend", "smtp"]).toContain(getMailDriver());
+      const result = await verifyMail();
       expect(result).toBe(true);
     },
     15000
   );
 
-  it.skipIf(hasSmtp)(
-    "skips live SMTP check when SMTP_USER/SMTP_PASS are not set",
+  it.skipIf(hasResend || hasSmtp)(
+    "skips live mail check when RESEND_API_KEY / SMTP_* are not set",
     () => {
-      expect(hasSmtp).toBe(false);
+      expect(getMailDriver()).toBe("none");
     }
   );
 });

@@ -1,63 +1,12 @@
-import nodemailer from "nodemailer";
+import {
+  getAdminNotifyEmail,
+  isMailConfigured,
+  sendMail,
+  verifyMail,
+  verifySmtp,
+} from "./mailer";
 
-// Read SMTP credentials dynamically every time to handle late env injection
-function getSmtpCredentials() {
-  return {
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
-  };
-}
-
-async function withSmtpTimeout<T>(promise: Promise<T>, ms = 20_000): Promise<T> {
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  try {
-    return await Promise.race([
-      promise,
-      new Promise<T>((_, reject) => {
-        timer = setTimeout(
-          () => reject(new Error(`SMTP timeout after ${ms}ms`)),
-          ms
-        );
-      }),
-    ]);
-  } finally {
-    if (timer) clearTimeout(timer);
-  }
-}
-
-function createTransporter() {
-  const creds = getSmtpCredentials();
-  if (!creds.user || !creds.pass) {
-    console.error("[Email] SMTP credentials not available. SMTP_USER:", creds.user ? "SET" : "EMPTY", "SMTP_PASS:", creds.pass ? "SET" : "EMPTY");
-    return null;
-  }
-  // 587+STARTTLS suele ser más fiable en PaaS (465 a veces cuelga/bloquea).
-  return nodemailer.createTransport({
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    requireTLS: true,
-    connectionTimeout: 12_000,
-    greetingTimeout: 12_000,
-    socketTimeout: 20_000,
-    auth: {
-      user: creds.user,
-      pass: creds.pass.replace(/\s+/g, ""),
-    },
-  });
-}
-
-export async function verifySmtp(): Promise<boolean> {
-  try {
-    const transporter = createTransporter();
-    if (!transporter) return false;
-    await withSmtpTimeout(transporter.verify());
-    return true;
-  } catch (err) {
-    console.warn("[Email] SMTP verification failed:", err);
-    return false;
-  }
-}
+export { verifySmtp, verifyMail };
 
 interface BookingEmailData {
   bookingId: number;
@@ -74,18 +23,15 @@ interface BookingEmailData {
 
 export async function sendBookingNotificationToAdmin(data: BookingEmailData): Promise<boolean> {
   try {
-    const transporter = createTransporter();
-    if (!transporter) {
-      console.error("[Email] Cannot send booking notification: SMTP not configured");
+    if (!isMailConfigured()) {
+      console.error("[Email] Cannot send booking notification: mail not configured");
       return false;
     }
-    const creds = getSmtpCredentials();
-    console.log("[Email] Sending booking notification to:", creds.user, "for booking ID:", data.bookingId);
+    const admin = getAdminNotifyEmail();
+    console.log("[Email] Sending booking notification to:", admin, "for booking ID:", data.bookingId);
 
-    const info = await withSmtpTimeout(
-      transporter.sendMail({
-      from: `"Tu Gestión Legal" <${creds.user}>`,
-      to: creds.user,
+    const info = await sendMail({
+      to: admin,
       subject: `Nueva reserva de cita - ${data.clientName}`,
       html: `
 <!DOCTYPE html>
@@ -148,8 +94,7 @@ export async function sendBookingNotificationToAdmin(data: BookingEmailData): Pr
   </div>
 </body>
 </html>`,
-    })
-    );
+    });
     console.log("[Email] Booking notification sent successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
@@ -169,12 +114,10 @@ interface BookingStatusEmailData {
 
 export async function sendBookingStatusToClient(data: BookingStatusEmailData): Promise<boolean> {
   try {
-    const transporter = createTransporter();
-    if (!transporter) {
-      console.error("[Email] Cannot send status email: SMTP not configured");
+    if (!isMailConfigured()) {
+      console.error("[Email] Cannot send status email: mail not configured");
       return false;
     }
-    const creds = getSmtpCredentials();
     const isConfirmed = data.status === "confirmed";
     const statusText = isConfirmed ? "Confirmada" : "Rechazada";
     const statusColor = isConfirmed ? "#16a34a" : "#dc2626";
@@ -185,9 +128,7 @@ export async function sendBookingStatusToClient(data: BookingStatusEmailData): P
 
     console.log("[Email] Sending status email to client:", data.clientEmail, "Status:", data.status);
 
-    const info = await withSmtpTimeout(
-      transporter.sendMail({
-      from: `"Tu Gestión Legal" <${creds.user}>`,
+    const info = await sendMail({
       to: data.clientEmail,
       subject: `Cita ${statusText} - Tu Gestión Legal`,
       html: `
@@ -235,8 +176,7 @@ export async function sendBookingStatusToClient(data: BookingStatusEmailData): P
   </div>
 </body>
 </html>`,
-    })
-    );
+    });
     console.log("[Email] Status email sent to client successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
@@ -256,18 +196,14 @@ interface ReminderEmailData {
 
 export async function sendReminderToClient(data: ReminderEmailData): Promise<boolean> {
   try {
-    const transporter = createTransporter();
-    if (!transporter) {
-      console.error("[Email] Cannot send reminder: SMTP not configured");
+    if (!isMailConfigured()) {
+      console.error("[Email] Cannot send reminder: mail not configured");
       return false;
     }
-    const creds = getSmtpCredentials();
 
     console.log("[Email] Sending 24h reminder to:", data.clientEmail, "for", data.date, data.time);
 
-    const info = await withSmtpTimeout(
-      transporter.sendMail({
-      from: `"Tu Gestión Legal" <${creds.user}>`,
+    const info = await sendMail({
       to: data.clientEmail,
       subject: `Recordatorio: Tu cita mañana a las ${data.time} - Tu Gestión Legal`,
       html: `
@@ -321,8 +257,7 @@ export async function sendReminderToClient(data: ReminderEmailData): Promise<boo
   </div>
 </body>
 </html>`,
-    })
-    );
+    });
     console.log("[Email] Reminder sent successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
@@ -346,12 +281,10 @@ export async function sendWeeklyNewsletter(
   posts: NewsletterPost[],
   siteUrl: string
 ): Promise<{ sent: number; failed: number }> {
-  const transporter = createTransporter();
-  if (!transporter) {
-    console.error("[Newsletter] Cannot send: SMTP not configured");
+  if (!isMailConfigured()) {
+    console.error("[Newsletter] Cannot send: mail not configured");
     return { sent: 0, failed: subscribers.length };
   }
-  const creds = getSmtpCredentials();
 
   let sent = 0;
   let failed = 0;
@@ -373,8 +306,7 @@ export async function sendWeeklyNewsletter(
       const greeting = sub.name ? `Hola ${sub.name}` : "Hola";
       const unsubscribeUrl = `${siteUrl}/unsubscribe?email=${encodeURIComponent(sub.email)}`;
 
-      await transporter.sendMail({
-        from: `"Tu Gestión Legal" <${creds.user}>`,
+      await sendMail({
         to: sub.email,
         subject: `📰 Novedades Legales de la Semana - Tu Gestión Legal`,
         html: `
@@ -441,28 +373,26 @@ export async function sendClientDocumentsEmail(data: {
   files: ClientDocumentAttachment[];
 }): Promise<boolean> {
   try {
-    const transporter = createTransporter();
-    if (!transporter) {
-      console.error("[Email] Cannot send client documents: SMTP not configured");
+    if (!isMailConfigured()) {
+      console.error("[Email] Cannot send client documents: mail not configured");
       return false;
     }
-    const creds = getSmtpCredentials();
+    const admin = getAdminNotifyEmail();
     const fileList = data.files
       .map((f) => `<li>${f.fileName}${f.content.length ? ` (${(f.content.length / 1024).toFixed(1)} KB)` : ""}</li>`)
       .join("");
 
     console.log(
       "[Email] Sending client documents to:",
-      creds.user,
+      admin,
       "from:",
       data.clientEmail,
       "files:",
       data.files.map((f) => f.fileName).join(", ")
     );
 
-    await transporter.sendMail({
-      from: `"Tu Gestión Legal" <${creds.user}>`,
-      to: creds.user,
+    await sendMail({
+      to: admin,
       replyTo: data.clientEmail,
       subject: `Documentos de cliente - ${data.clientName}`,
       html: `

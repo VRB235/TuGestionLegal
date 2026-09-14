@@ -95,6 +95,8 @@ async function startServer() {
   const uploadsDir = path.resolve(process.cwd(), "uploads");
   app.use("/uploads", express.static(uploadsDir));
   console.log(`[Storage] driver=${getStorageDriver()} uploadsDir=${uploadsDir}`);
+  const { getMailDriver } = await import("../mailer");
+  console.log(`[Email] driver=${getMailDriver()}`);
 
   // OAuth callback under /api/oauth/callback (501 if Manus OAuth disabled)
   registerOAuthRoutes(app);
