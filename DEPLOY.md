@@ -73,15 +73,27 @@ Mismo patrón para `sendNewsletter`. Los timers internos ya corren cada hora den
 
 ## Checklist post-deploy
 
-- [ ] `GET /api/health` → `ok: true` y `database: "ok"`
-- [ ] HTTPS OK (dominio o `*.railway.app`)
-- [ ] Home carga
-- [ ] Login admin (`/login`)
-- [ ] Crear reserva → fila en `bookings` + email admin con enlaces al **dominio real**
-- [ ] Confirm/reject por enlace
-- [ ] Contacto + envío documentos por email
-- [ ] Reseñas Google (si hay Places key)
-- [ ] Backup diario de MySQL (Railway backups / dump cron)
+- [x] `GET /api/health` → `ok: true` y `database: "ok"` (2026-09-14)
+- [x] HTTPS OK (`*.up.railway.app`)
+- [x] Home carga
+- [x] Login admin (`/login`)
+- [x] Crear reserva → fila en `bookings` (email admin pendiente Resend / Pro)
+- [x] Confirm/reject por enlace (`/api/booking-action`) — status DB OK; email cliente pendiente de mail HTTPS
+- [x] Contacto guarda en DB (`contact.send`)
+- [ ] Reseñas Google en dominio custom (Places key cargada; falta DNS)
+- [ ] Backup diario de MySQL (ver sección Backup)
+- [ ] DNS `www.tugestionlegal.es` → Railway (`DNS_RAILWAY.md`)
+
+### Backup MySQL (Railway)
+
+1. Dashboard → servicio **MySQL** → Backups / Settings (activar si el plan lo permite).
+2. Si no hay backups automáticos, dump manual periódico con la URL pública del plugin MySQL:
+
+```bash
+mysqldump --uri="$DATABASE_URL" > tgl-backup.sql
+```
+
+3. Guardar el dump fuera de Railway (Drive/S3).
 
 ---
 
