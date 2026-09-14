@@ -8,19 +8,41 @@ function getSmtpCredentials() {
   };
 }
 
+async function withSmtpTimeout<T>(promise: Promise<T>, ms = 20_000): Promise<T> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timer = setTimeout(
+          () => reject(new Error(`SMTP timeout after ${ms}ms`)),
+          ms
+        );
+      }),
+    ]);
+  } finally {
+    if (timer) clearTimeout(timer);
+  }
+}
+
 function createTransporter() {
   const creds = getSmtpCredentials();
   if (!creds.user || !creds.pass) {
     console.error("[Email] SMTP credentials not available. SMTP_USER:", creds.user ? "SET" : "EMPTY", "SMTP_PASS:", creds.pass ? "SET" : "EMPTY");
     return null;
   }
+  // 587+STARTTLS suele ser más fiable en PaaS (465 a veces cuelga/bloquea).
   return nodemailer.createTransport({
     host: "smtp.gmail.com",
-    port: 465,
-    secure: true,
+    port: 587,
+    secure: false,
+    requireTLS: true,
+    connectionTimeout: 12_000,
+    greetingTimeout: 12_000,
+    socketTimeout: 20_000,
     auth: {
       user: creds.user,
-      pass: creds.pass,
+      pass: creds.pass.replace(/\s+/g, ""),
     },
   });
 }
@@ -29,7 +51,7 @@ export async function verifySmtp(): Promise<boolean> {
   try {
     const transporter = createTransporter();
     if (!transporter) return false;
-    await transporter.verify();
+    await withSmtpTimeout(transporter.verify());
     return true;
   } catch (err) {
     console.warn("[Email] SMTP verification failed:", err);
@@ -60,7 +82,8 @@ export async function sendBookingNotificationToAdmin(data: BookingEmailData): Pr
     const creds = getSmtpCredentials();
     console.log("[Email] Sending booking notification to:", creds.user, "for booking ID:", data.bookingId);
 
-    const info = await transporter.sendMail({
+    const info = await withSmtpTimeout(
+      transporter.sendMail({
       from: `"Tu Gestión Legal" <${creds.user}>`,
       to: creds.user,
       subject: `Nueva reserva de cita - ${data.clientName}`,
@@ -125,7 +148,8 @@ export async function sendBookingNotificationToAdmin(data: BookingEmailData): Pr
   </div>
 </body>
 </html>`,
-    });
+    })
+    );
     console.log("[Email] Booking notification sent successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
@@ -161,7 +185,8 @@ export async function sendBookingStatusToClient(data: BookingStatusEmailData): P
 
     console.log("[Email] Sending status email to client:", data.clientEmail, "Status:", data.status);
 
-    const info = await transporter.sendMail({
+    const info = await withSmtpTimeout(
+      transporter.sendMail({
       from: `"Tu Gestión Legal" <${creds.user}>`,
       to: data.clientEmail,
       subject: `Cita ${statusText} - Tu Gestión Legal`,
@@ -210,7 +235,8 @@ export async function sendBookingStatusToClient(data: BookingStatusEmailData): P
   </div>
 </body>
 </html>`,
-    });
+    })
+    );
     console.log("[Email] Status email sent to client successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
@@ -239,7 +265,8 @@ export async function sendReminderToClient(data: ReminderEmailData): Promise<boo
 
     console.log("[Email] Sending 24h reminder to:", data.clientEmail, "for", data.date, data.time);
 
-    const info = await transporter.sendMail({
+    const info = await withSmtpTimeout(
+      transporter.sendMail({
       from: `"Tu Gestión Legal" <${creds.user}>`,
       to: data.clientEmail,
       subject: `Recordatorio: Tu cita mañana a las ${data.time} - Tu Gestión Legal`,
@@ -294,7 +321,8 @@ export async function sendReminderToClient(data: ReminderEmailData): Promise<boo
   </div>
 </body>
 </html>`,
-    });
+    })
+    );
     console.log("[Email] Reminder sent successfully. MessageId:", info.messageId);
     return true;
   } catch (err) {
