@@ -27,6 +27,13 @@ export const bookings = mysqlTable("bookings", {
   time: varchar("time", { length: 10 }).notNull(),
   message: text("message"),
   status: mysqlEnum("status", ["pending", "confirmed", "cancelled"]).default("pending").notNull(),
+  paymentStatus: mysqlEnum("paymentStatus", ["unpaid", "paid", "refunded", "failed"])
+    .default("unpaid")
+    .notNull(),
+  stripeSessionId: varchar("stripeSessionId", { length: 255 }),
+  stripePaymentIntentId: varchar("stripePaymentIntentId", { length: 255 }),
+  amountCents: int("amountCents"),
+  currency: varchar("currency", { length: 3 }).default("eur"),
   reminderSent: boolean("reminderSent").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });

@@ -139,7 +139,48 @@ export async function createBooking(data: InsertBooking) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.insert(bookings).values(data);
+  const rows = await db
+    .select()
+    .from(bookings)
+    .where(
+      and(
+        eq(bookings.email, data.email),
+        eq(bookings.date, data.date),
+        eq(bookings.time, data.time)
+      )
+    )
+    .orderBy(desc(bookings.id))
+    .limit(1);
+  return rows[0]?.id ?? 0;
 }
+
+export async function getBookingByStripeSessionId(sessionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db
+    .select()
+    .from(bookings)
+    .where(eq(bookings.stripeSessionId, sessionId))
+    .limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updateBookingPayment(
+  id: number,
+  data: {
+    paymentStatus?: "unpaid" | "paid" | "refunded" | "failed";
+    status?: "pending" | "confirmed" | "cancelled";
+    stripeSessionId?: string | null;
+    stripePaymentIntentId?: string | null;
+    amountCents?: number | null;
+    currency?: string | null;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(bookings).set(data).where(eq(bookings.id, id));
+}
+
 
 export async function getBookings() {
   const db = await getDb();

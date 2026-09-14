@@ -34,7 +34,7 @@ export default function CondicionesContratacion() {
 
             <h2 className="text-[#112250]" style={{ fontFamily: "var(--font-heading)" }}>4. Precios y Forma de Pago</h2>
             <p>
-              Los precios indicados en el sitio web incluyen los impuestos aplicables salvo que se indique lo contrario. Los pagos se realizarán según las condiciones acordadas para cada servicio. Actualmente, los pagos online se encuentran temporalmente desactivados.
+              Los precios indicados en el sitio web incluyen los impuestos aplicables salvo que se indique lo contrario. Las asesorías online se pagan de forma segura mediante Stripe Checkout en el momento de la reserva. Otros servicios pueden facturarse según las condiciones acordadas.
             </p>
 
             <h2 className="text-[#112250]" style={{ fontFamily: "var(--font-heading)" }}>5. Cancelaciones y Devoluciones</h2>

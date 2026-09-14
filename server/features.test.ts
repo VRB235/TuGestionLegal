@@ -4,18 +4,21 @@ import type { TrpcContext } from "./_core/context";
 
 // Mock the database functions
 vi.mock("./db", () => ({
-  createBooking: vi.fn().mockResolvedValue(undefined),
+  createBooking: vi.fn().mockResolvedValue(1),
+  updateBookingPayment: vi.fn().mockResolvedValue(undefined),
+  getBookingByStripeSessionId: vi.fn().mockResolvedValue(undefined),
   getBookings: vi.fn().mockResolvedValue([
     {
       id: 1,
       name: "Test Client",
       email: "client@test.com",
       phone: "+34600000000",
-      serviceType: "Arraigo Social",
+      serviceType: "Asesoría por Videoconferencia",
       date: "2026-04-15",
       time: "10:00",
       message: null,
       status: "pending",
+      paymentStatus: "unpaid",
       createdAt: new Date(),
     },
   ]),
@@ -26,7 +29,7 @@ vi.mock("./db", () => ({
         name: "Test Client",
         email: "client@test.com",
         phone: "+34600000000",
-        serviceType: "Arraigo Social",
+        serviceType: "Asesoría por Videoconferencia",
         date: "2026-04-15",
         time: "10:00",
         message: null,
@@ -144,12 +147,13 @@ describe("booking.create", () => {
       name: "Juan Pérez",
       email: "juan@test.com",
       phone: "+34 600 000 000",
-      serviceType: "Arraigo Social",
+      serviceType: "Asesoría por Videoconferencia",
       date: "2026-04-10",
       time: "10:00",
-      message: "Consulta sobre arraigo social",
+      message: "Consulta de prueba",
     });
-    expect(result).toEqual({ success: true });
+    expect(result.success).toBe(true);
+    expect(result.requiresPayment).toBe(false);
 
     const { sendBookingNotificationToAdmin } = await import("./email");
     expect(sendBookingNotificationToAdmin).toHaveBeenCalled();
@@ -220,7 +224,7 @@ describe("booking.list", () => {
     const result = await caller.booking.list();
     expect(Array.isArray(result)).toBe(true);
     expect(result.length).toBeGreaterThan(0);
-    expect(result[0].serviceType).toBe("Arraigo Social");
+    expect(result[0].serviceType).toBe("Asesoría por Videoconferencia");
   });
 
   it("rejects non-admin from listing bookings", async () => {

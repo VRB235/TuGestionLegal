@@ -18,6 +18,8 @@ const ServiciosAdministrativos = lazy(() => import("./pages/ServiciosAdministrat
 const ServiciosInternacionales = lazy(() => import("./pages/ServiciosInternacionales"));
 const OtrosServicios = lazy(() => import("./pages/OtrosServicios"));
 const Reservas = lazy(() => import("./pages/Reservas"));
+const ReservaExito = lazy(() => import("./pages/ReservaExito"));
+const ReservaCancelado = lazy(() => import("./pages/ReservaCancelado"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const Contacto = lazy(() => import("./pages/Contacto"));
@@ -52,6 +54,8 @@ function Router() {
           <Route path="/servicios-internacionales" component={ServiciosInternacionales} />
           <Route path="/otros-servicios" component={OtrosServicios} />
           <Route path="/reservas" component={Reservas} />
+          <Route path="/reservas/exito" component={ReservaExito} />
+          <Route path="/reservas/cancelado" component={ReservaCancelado} />
           <Route path="/blog" component={Blog} />
           <Route path="/blog/:slug" component={BlogPost} />
           <Route path="/contacto" component={Contacto} />

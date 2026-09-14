@@ -93,9 +93,14 @@ export default function Reservas() {
   );
 
   const createBooking = trpc.booking.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (data) => {
+      if (data.checkoutUrl) {
+        toast.success("Redirigiendo al pago seguro…");
+        window.location.href = data.checkoutUrl;
+        return;
+      }
       setSubmitted(true);
-      toast.success("Reserva enviada correctamente. Recibirás confirmación por email.");
+      toast.success("Reserva enviada correctamente.");
     },
     onError: (err) => {
       toast.error("Error al enviar la reserva: " + err.message);
@@ -372,7 +377,7 @@ export default function Reservas() {
                     </Button>
 
                     <p className="text-xs text-gray-500 text-center">
-                      Recibirás un email de confirmación cuando revisemos tu reserva. Los pagos se gestionan por separado.
+                      Tras el pago seguro con Stripe, recibirás confirmación de la cita por email.
                     </p>
                   </form>
                 </CardContent>

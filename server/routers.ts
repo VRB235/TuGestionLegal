@@ -23,6 +23,7 @@ import {
   unsubscribeNewsletter,
   getUserByEmail,
   getDb,
+  updateBookingPayment,
 } from "./db";
 import { notifyOwner } from "./_core/notification";
 import {
@@ -37,6 +38,11 @@ import { toPublicUser, verifyPassword } from "./password";
 import { eq } from "drizzle-orm";
 import { users } from "../drizzle/schema";
 import { resolvePublicBaseUrl } from "./publicUrl";
+import {
+  createBookingCheckoutSession,
+  getServicePriceCents,
+  isStripeConfigured,
+} from "./stripe";
 
 const adminProcedure = protectedProcedure.use(({ ctx, next }) => {
   if (ctx.user.role !== "admin") throw new TRPCError({ code: "FORBIDDEN" });
@@ -122,24 +128,83 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ input, ctx }) => {
-        // Check if slot is already taken
         const existingBookings = await getBookingsByDate(input.date);
         const slotTaken = existingBookings.some((b) => b.time === input.time);
         if (slotTaken) {
-          throw new TRPCError({ code: "CONFLICT", message: "Este horario ya está reservado. Por favor, elige otro." });
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: "Este horario ya está reservado. Por favor, elige otro.",
+          });
         }
-        console.log("[Booking] Creating new booking for:", input.name, input.serviceType, input.date, input.time);
-        await createBooking(input);
 
-        // Get the newly created booking ID (get latest booking for this email+date)
-        const allBookings = await getBookings();
-        const newBooking = allBookings.find(
-          (b) => b.email === input.email && b.date === input.date && b.time === input.time
+        let amountCents = 0;
+        try {
+          amountCents = getServicePriceCents(input.serviceType);
+        } catch {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "Este servicio no admite pago online.",
+          });
+        }
+
+        console.log(
+          "[Booking] Creating booking for:",
+          input.name,
+          input.serviceType,
+          input.date,
+          input.time
         );
-        const bookingId = newBooking?.id || 0;
-        console.log("[Booking] Created with ID:", bookingId);
 
-        // Build confirm/reject URLs — PUBLIC_APP_URL en prod; Origin en local
+        // Stripe Checkout (prod/local con clave): reserva unpaid + redirect
+        if (isStripeConfigured()) {
+          const bookingId = await createBooking({
+            ...input,
+            status: "pending",
+            paymentStatus: "unpaid",
+            amountCents,
+            currency: "eur",
+          });
+          console.log("[Booking] Created unpaid ID:", bookingId);
+
+          try {
+            const session = await createBookingCheckoutSession({
+              bookingId,
+              serviceType: input.serviceType,
+              date: input.date,
+              time: input.time,
+              customerEmail: input.email,
+              customerName: input.name,
+            });
+            await updateBookingPayment(bookingId, {
+              stripeSessionId: session.sessionId,
+            });
+            console.log("[Booking] Stripe Checkout session:", session.sessionId);
+            return {
+              success: true as const,
+              bookingId,
+              checkoutUrl: session.url,
+              requiresPayment: true as const,
+            };
+          } catch (err) {
+            console.error("[Booking] Stripe session failed:", err);
+            await updateBookingStatus(bookingId, "cancelled");
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "No se pudo iniciar el pago. Inténtalo de nuevo.",
+            });
+          }
+        }
+
+        // Fallback sin Stripe (dev): flujo anterior
+        const bookingId = await createBooking({
+          ...input,
+          status: "pending",
+          paymentStatus: "unpaid",
+          amountCents,
+          currency: "eur",
+        });
+        console.log("[Booking] Created (no Stripe) ID:", bookingId);
+
         const origin =
           ctx.req.headers.origin ||
           ctx.req.headers.referer?.replace(/\/$/, "") ||
@@ -147,11 +212,9 @@ export const appRouter = router({
         const baseUrl = resolvePublicBaseUrl({ originHeader: origin });
         const confirmUrl = `${baseUrl}/api/booking-action?id=${bookingId}&action=confirm`;
         const rejectUrl = `${baseUrl}/api/booking-action?id=${bookingId}&action=reject`;
-        console.log("[Booking] Action URLs base:", baseUrl);
 
-        // Send email notification to admin
         try {
-          const emailSent = await sendBookingNotificationToAdmin({
+          await sendBookingNotificationToAdmin({
             bookingId,
             clientName: input.name,
             clientEmail: input.email,
@@ -163,22 +226,24 @@ export const appRouter = router({
             confirmUrl,
             rejectUrl,
           });
-          console.log("[Booking] Email notification sent:", emailSent);
         } catch (emailErr) {
           console.error("[Booking] Email notification failed:", emailErr);
         }
 
-        // Also send Manus platform notification
         try {
           await notifyOwner({
             title: "Nueva reserva de cita",
-            content: `${input.name} ha reservado ${input.serviceType} para el ${input.date} a las ${input.time}.\nEmail: ${input.email}\nTeléfono: ${input.phone}${input.message ? `\nMensaje: ${input.message}` : ""}\n\nRevisa tu email (info@tugestionlegal.es) para confirmar o rechazar la cita.`,
+            content: `${input.name} ha reservado ${input.serviceType} para el ${input.date} a las ${input.time}.`,
           });
         } catch (notifyErr) {
           console.error("[Booking] Platform notification failed:", notifyErr);
         }
 
-        return { success: true };
+        return {
+          success: true as const,
+          bookingId,
+          requiresPayment: false as const,
+        };
       }),
     list: adminProcedure.query(async () => {
       return getBookings();

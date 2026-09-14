@@ -178,6 +178,27 @@ export default function AdminReservas() {
                                 <StatusIcon className="w-3 h-3 mr-1" />
                                 {config.label}
                               </Badge>
+                              {"paymentStatus" in booking && booking.paymentStatus ? (
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    booking.paymentStatus === "paid"
+                                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                      : booking.paymentStatus === "unpaid"
+                                        ? "bg-slate-50 text-slate-600 border-slate-200"
+                                        : "bg-red-50 text-red-700 border-red-200"
+                                  }
+                                >
+                                  {booking.paymentStatus === "paid"
+                                    ? "Pagado"
+                                    : booking.paymentStatus === "unpaid"
+                                      ? "Sin pagar"
+                                      : booking.paymentStatus}
+                                  {booking.amountCents
+                                    ? ` · ${(booking.amountCents / 100).toFixed(0)}€`
+                                    : ""}
+                                </Badge>
+                              ) : null}
                             </div>
                             <p className="text-sm font-semibold text-[#C19D4E]">{booking.serviceType}</p>
                             <div className="flex flex-wrap gap-4 text-sm text-gray-600">
