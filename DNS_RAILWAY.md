@@ -1,35 +1,38 @@
-# DNS — www.tugestionlegal.es → Railway
+# DNS — www.tugestionlegal.es → Railway (IONOS)
 
-**Estado Railway:** dominio custom `www.tugestionlegal.es` creado en servicio `web`.  
-**Apex** (`tugestionlegal.es` sin www): no cabía en el plan Trial (límite 1 custom domain). Usar redirect en Cloudflare: apex → www.
+**Registrador DNS:** IONOS (no Cloudflare).  
+**Estado (23-sep-2026):** dominio verificado, certificado **válido**, `https://www.tugestionlegal.es/api/health` → 200.
 
-**CDN detectado:** Cloudflare (hoy el CNAME de `www` apunta a `cname.manus.space` — hay que cambiarlo).
+## Registro actual en IONOS
 
-## Registros a crear/editar en Cloudflare (zona `tugestionlegal.es`)
+| Tipo | Nombre | Contenido / destino |
+|------|--------|---------------------|
+| **CNAME** | `www` | Preferible: `a5p3tnti.up.railway.app` (destino Railway actual) |
 
-| Tipo | Nombre | Contenido / destino | Proxy |
-|------|--------|---------------------|--------|
-| **CNAME** | `www` | `4osfmedy.up.railway.app` | Preferible **DNS only** (gris) hasta que el cert esté OK; luego se puede probar naranja |
-| **TXT** | `_railway-verify.www` | `railway-verify=5dc6d8b65f5b50a498ce2a4b59b2608db92be1df043c36a2697c0f78be941a49` | DNS only |
+Si en IONOS aún figura `4osfmedy.up.railway.app` y el sitio abre bien, puede actualizar al valor nuevo cuando le convenga (Railway lo marca como requerido).
+
+TXT `_railway-verify.www` ya no es crítico (dominio **verified: true**); puede dejarlo o borrarlo.
 
 ### Redirect del apex (recomendado)
 
-En Cloudflare → Rules / Redirects o Page Rule:
+En IONOS → Redirects / Reenvíos:
 
-- `tugestionlegal.es/*` → `https://www.tugestionlegal.es/$1` (301)
+- `tugestionlegal.es` → `https://www.tugestionlegal.es` (301)
 
-(Así no hace falta segundo custom domain en Railway.)
+(Plan Trial: solo 1 custom domain en Railway = `www`.)
 
-## Tras propagar DNS
+## Variables
 
-1. Comprobar: `https://www.tugestionlegal.es/api/health`
-2. `PUBLIC_APP_URL` ya está en `https://www.tugestionlegal.es` (Railway).
-3. URL temporal sigue viva: `https://web-production-8a7ae.up.railway.app`
+- `PUBLIC_APP_URL=https://www.tugestionlegal.es` (Railway)
+- URL temporal: `https://web-production-8a7ae.up.railway.app`
 
-## Comprobar estado
+## Comprobar
 
 ```bash
-npx @railway/cli domain status acfa3601-9618-4a7e-91f5-cfb1df0d14bb
+npx @railway/cli domain status www.tugestionlegal.es --service web
+curl -sS https://www.tugestionlegal.es/api/health
 ```
 
-`verified: true` + certificado válido = listo.
+`verified: true` + `CERTIFICATE_STATUS_TYPE_VALID` = listo.
+
+Si el navegador aún muestra `ERR_CERT_COMMON_NAME_INVALID` por HSTS antiguo: cierre pestañas, espere 1–2 min o pruebe ventana privada.

@@ -1,15 +1,16 @@
 # Estatus del proyecto — Tu Gestión Legal
 
-**Fecha:** 22 de septiembre de 2026  
+**Fecha:** 23 de septiembre de 2026  
 **Repo:** https://github.com/VRB235/TuGestionLegal  
-**URL prod:** https://web-production-8a7ae.up.railway.app
+**URL prod:** https://www.tugestionlegal.es  
+**URL Railway:** https://web-production-8a7ae.up.railway.app
 
 ---
 
 ## Veredicto
 
-App + MySQL + Stripe **test** operativos en Railway.  
-Bloqueos humanos: **DNS Cloudflare** (aún apunta a Manus), **`RESEND_API_KEY`**, backup MySQL documentado.
+Dominio **www** en Railway (IONOS): verificado + TLS OK + health 200.  
+Pendientes: **`RESEND_API_KEY`**, smoke Stripe UI, backup MySQL, opcional alinear CNAME a `a5p3tnti.up.railway.app`.
 
 ---
 
@@ -18,7 +19,7 @@ Bloqueos humanos: **DNS Cloudflare** (aún apunta a Manus), **`RESEND_API_KEY`**
 | Fase | Estado |
 |------|--------|
 | **0–2** | ✅ |
-| **3** Producción | 🟡 ~85% — live Railway; DNS/email/backup pendientes |
+| **3** Producción | 🟡 ~90% — dominio www + TLS OK; falta email/backup |
 | **4** Stripe | 🟡 ~95% — claves cuenta actual + webhook OK; booking #8 paid vía webhook |
 | **5** Mejoras | ⏳ |
 
@@ -28,16 +29,16 @@ Bloqueos humanos: **DNS Cloudflare** (aún apunta a Manus), **`RESEND_API_KEY`**
 - Health Railway `200`
 - `PUBLIC_APP_URL` = URL Railway (correcto mientras www no resuelva)
 
-### DNS (bloqueado)
-- Railway custom domain `www.tugestionlegal.es`: **Verified: no**
-- DNS actual: `www` → `cname.manus.space` (sigue Manus)
-- Falta en Cloudflare: CNAME `www` → `4osfmedy.up.railway.app` + TXT verify (`DNS_RAILWAY.md`)
+### DNS (23-sep)
+- IONOS: CNAME `www` → Railway; dominio **verified** + cert **VALID**
+- Health `https://www.tugestionlegal.es/api/health` → 200
+- `PUBLIC_APP_URL` = `https://www.tugestionlegal.es`
 
-### Pendiente corto (acción humana)
-1. Cloudflare DNS según `DNS_RAILWAY.md`
-2. Pegar `RESEND_API_KEY` (y opcional dominio en Resend) — ver `EMAIL_RESEND.md`
-3. Pago manual `4242` en Chrome (opcional; cierra eslabón UI)
-4. Backup MySQL — ver `BACKUP_RAILWAY.md`
+### Pendiente corto
+1. Pegar `RESEND_API_KEY` — ver `EMAIL_RESEND.md`
+2. Pago manual `4242` en Chrome (opcional)
+3. Backup MySQL — ver `BACKUP_RAILWAY.md`
+4. Opcional IONOS: CNAME `www` → `a5p3tnti.up.railway.app` (destino nuevo Railway)
 
 ---
 
