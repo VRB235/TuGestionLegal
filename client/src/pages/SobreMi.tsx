@@ -33,8 +33,22 @@ export default function SobreMi() {
       <section className="py-20 bg-[#F5F0E9]">
         <div className="container">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <motion.div initial={{ opacity: 0, x: -40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
-              <img src={ABOUT_IMG} alt="Tu Gestión Legal" className="rounded-xl shadow-2xl w-full object-cover max-h-[500px] object-top" />
+            <motion.div
+              initial={{ opacity: 0, x: -40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center lg:justify-start"
+            >
+              <img
+                src={ABOUT_IMG}
+                alt="Tu Gestión Legal"
+                width={368}
+                height={485}
+                className="rounded-xl shadow-2xl w-full max-w-[400px] h-auto"
+                loading="lazy"
+                decoding="async"
+              />
             </motion.div>
             <motion.div initial={{ opacity: 0, x: 40 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
               <h2 className="text-3xl font-bold text-[#112250] mb-6" style={{ fontFamily: "var(--font-heading)" }}>

@@ -60,7 +60,8 @@ export async function createBookingCheckoutSession(params: {
     },
     success_url: `${base}/reservas/exito?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/reservas/cancelado?booking_id=${params.bookingId}`,
-    expires_at: Math.floor(Date.now() / 1000) + 30 * 60, // 30 min hold
+    // Stripe exige ≥30 min; margen por desfase de reloj del host
+    expires_at: Math.floor(Date.now() / 1000) + 35 * 60,
   });
 
   if (!session.url) {

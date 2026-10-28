@@ -198,11 +198,23 @@ export const appRouter = router({
               requiresPayment: true as const,
             };
           } catch (err) {
-            console.error("[Booking] Stripe session failed:", err);
+            const stripeMsg =
+              err && typeof err === "object" && "message" in err
+                ? String((err as { message?: unknown }).message || "")
+                : "";
+            console.error(
+              "[Booking] Stripe session failed:",
+              stripeMsg || err,
+              err && typeof err === "object" && "type" in err
+                ? { type: (err as { type?: string }).type, code: (err as { code?: string }).code }
+                : undefined
+            );
             await updateBookingStatus(bookingId, "cancelled");
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "No se pudo iniciar el pago. Inténtalo de nuevo.",
+              message: stripeMsg
+                ? `No se pudo iniciar el pago: ${stripeMsg}`
+                : "No se pudo iniciar el pago. Inténtalo de nuevo.",
             });
           }
         }
