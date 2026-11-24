@@ -4,6 +4,8 @@ import path from "node:path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
+  // `/` + HTML rewrite de miurltemporal; inlineDynamicImports evita chunks `/assets/*` sin rewrite.
+  base: process.env.VITE_BASE || "/",
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
@@ -18,6 +20,12 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    cssCodeSplit: false,
+    rollupOptions: {
+      output: {
+        inlineDynamicImports: true,
+      },
+    },
   },
   server: {
     host: true,

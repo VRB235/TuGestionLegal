@@ -2,6 +2,7 @@ import type { Request, Response } from "express";
 import {
   getBookingById,
   getBookingByStripeSessionId,
+  getBookingsByDate,
   updateBookingPayment,
 } from "./db";
 import {
@@ -63,6 +64,27 @@ export async function handleStripeWebhook(
       // Idempotency
       if (booking.paymentStatus === "paid") {
         res.json({ received: true, alreadyPaid: true });
+        return;
+      }
+
+      // Carrera: otro pago pudo confirmar el mismo hueco mientras este Checkout estaba abierto
+      const holders = await getBookingsByDate(booking.date);
+      const takenByOther = holders.some(
+        (b) => b.time === booking.time && b.id !== booking.id
+      );
+      if (takenByOther) {
+        await updateBookingPayment(booking.id, {
+          status: "cancelled",
+          paymentStatus: "failed",
+          stripeSessionId: session.id,
+        });
+        console.error(
+          "[Stripe] Slot already taken on payment; cancelled booking",
+          booking.id,
+          booking.date,
+          booking.time
+        );
+        res.json({ received: true, slotConflict: true });
         return;
       }
 

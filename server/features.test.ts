@@ -148,7 +148,7 @@ describe("booking.create", () => {
       email: "juan@test.com",
       phone: "+34 600 000 000",
       serviceType: "Asesoría por Videoconferencia",
-      date: "2026-04-10",
+      date: "2027-04-10",
       time: "10:00",
       message: "Consulta de prueba",
     });
@@ -170,7 +170,7 @@ describe("booking.create", () => {
         email: "invalid-email",
         phone: "+34 600 000 000",
         serviceType: "Test",
-        date: "2026-04-10",
+        date: "2027-04-10",
         time: "10:00",
       })
     ).rejects.toThrow();
@@ -180,9 +180,10 @@ describe("booking.create", () => {
 describe("booking.occupiedSlots", () => {
   it("returns occupied time slots for a given date", async () => {
     const { getBookingsByDate } = await import("./db");
+    // getBookingsByDate ya filtra: pending+unpaid con Stripe no ocupan
     (getBookingsByDate as ReturnType<typeof vi.fn>).mockResolvedValueOnce([
       { time: "09:00", status: "confirmed" },
-      { time: "11:00", status: "pending" },
+      { time: "11:00", status: "confirmed", paymentStatus: "paid" },
     ]);
     const caller = appRouter.createCaller(createPublicContext());
     const result = await caller.booking.occupiedSlots({ date: "2026-07-20" });
@@ -211,7 +212,7 @@ describe("booking.create - slot conflict", () => {
         email: "test@test.com",
         phone: "+34 600 000 000",
         serviceType: "Asesor\u00eda por Videoconferencia",
-        date: "2026-07-20",
+        date: "2027-07-20",
         time: "10:00",
       })
     ).rejects.toThrow("Este horario ya est\u00e1 reservado");

@@ -167,7 +167,8 @@ export const appRouter = router({
           input.time
         );
 
-        // Stripe Checkout (prod/local con clave): reserva unpaid + redirect
+        // Stripe Checkout: se crea unpaid sin bloquear el hueco hasta el pago.
+        // stripeSessionId placeholder evita que el pending se trate como hold legacy.
         if (isStripeConfigured()) {
           const bookingId = await createBooking({
             ...input,
@@ -175,6 +176,7 @@ export const appRouter = router({
             paymentStatus: "unpaid",
             amountCents,
             currency: "eur",
+            stripeSessionId: "creating",
           });
           console.log("[Booking] Created unpaid ID:", bookingId);
 

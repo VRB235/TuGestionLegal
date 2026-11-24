@@ -201,11 +201,35 @@ export async function updateBookingStatus(id: number, status: "pending" | "confi
   await db.update(bookings).set({ status }).where(eq(bookings.id, id));
 }
 
+/**
+ * Un horario solo se considera ocupado si la cita está confirmada/pagada,
+ * o si es el flujo legacy (pending sin Checkout de Stripe).
+ * Las reservas `pending` + `unpaid` con sesión Stripe NO bloquean el hueco
+ * hasta que el pago se complete.
+ */
+export function bookingHoldsSlot(b: {
+  status: string;
+  paymentStatus?: string | null;
+  stripeSessionId?: string | null;
+}): boolean {
+  if (b.status === "cancelled") return false;
+  if (b.paymentStatus === "paid") return true;
+  if (b.status === "confirmed") return true;
+  // Legacy sin Stripe: pending/unpaid sin checkout → sí reserva el hueco
+  if (b.status === "pending" && (b.paymentStatus ?? "unpaid") === "unpaid") {
+    return !b.stripeSessionId;
+  }
+  return false;
+}
+
 export async function getBookingsByDate(date: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(bookings)
+  const rows = await db
+    .select()
+    .from(bookings)
     .where(and(eq(bookings.date, date), ne(bookings.status, "cancelled")));
+  return rows.filter(bookingHoldsSlot);
 }
 
 // ---- Reminder helpers ----

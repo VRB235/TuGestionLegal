@@ -1,16 +1,16 @@
 # Estatus del proyecto — Tu Gestión Legal
 
-**Fecha:** 23 de septiembre de 2026  
-**Repo:** https://github.com/VRB235/TuGestionLegal  
-**URL prod:** https://www.tugestionlegal.es  
-**URL Railway:** https://web-production-8a7ae.up.railway.app
+**Fecha:** 24 de noviembre de 2026  
+**Repo:** https://github.com/VRB235/TuGestionLegal (mirror: leonardoazocarag/tugestionlegal)  
+**Dominio:** `https://www.tugestionlegal.es` (IONOS → Raiola; producción)  
+**Hosting:** Raiola Hosting Code — CODE1100 / `opebryph`
 
 ---
 
 ## Veredicto
 
-Dominio **www** en Railway (IONOS): verificado + TLS OK + health 200.  
-Pendientes: **`RESEND_API_KEY`**, smoke Stripe UI, backup MySQL, opcional alinear CNAME a `a5p3tnti.up.railway.app`.
+Producción estable en dominio final: DNS, AutoSSL, SMTP Google, Stripe **live**, JetBackup, higiene operativa hecha (admin rotado, cron, apex→www, secretos fuera de git).  
+Siguiente bloque de trabajo: **Fase 5** (mejoras de producto/SEO; no bloquea go-live).
 
 ---
 
@@ -19,29 +19,37 @@ Pendientes: **`RESEND_API_KEY`**, smoke Stripe UI, backup MySQL, opcional alinea
 | Fase | Estado |
 |------|--------|
 | **0–2** | ✅ |
-| **3** Producción | 🟡 ~90% — dominio www + TLS OK; falta email/backup |
-| **4** Stripe | 🟡 ~95% — claves cuenta actual + webhook OK; booking #8 paid vía webhook |
-| **5** Mejoras | ⏳ |
+| **3b** Raiola | ✅ producción en `www.tugestionlegal.es` |
+| **4** Stripe | ✅ **live** (cobros reales activos) |
+| **5** Mejoras | ⏳ pendiente |
 
-### Hecho (22-sep)
-- Claves Stripe test de la cuenta actual en Railway + webhook
-- Smoke: `booking.create` → Checkout URL → webhook firmado → **#8** `paid`/`confirmed`
-- Health Railway `200`
-- `PUBLIC_APP_URL` = URL Railway (correcto mientras www no resuelva)
+### Hecho (ops / higiene — 24 nov)
 
-### DNS (23-sep)
-- IONOS: CNAME `www` → Railway; dominio **verified** + cert **VALID**
-- Health `https://www.tugestionlegal.es/api/health` → 200
-- `PUBLIC_APP_URL` = `https://www.tugestionlegal.es`
+- `ADMIN_PASSWORD` rotado + login verificado; `ADMIN_RESET_PASSWORD=false`
+- Cron cPanel horario → `POST /api/scheduled/sendReminders` (+ timers in-process newsletter)
+- Redirect 301 apex `tugestionlegal.es` → `https://www.tugestionlegal.es`
+- Docs con secretos en `.gitignore` (no commit)
+- Slot hold: unpaid sin sesión Stripe no bloquea horario; precio videoconferencia 47 €
 
-### Pendiente corto
-1. Pegar `RESEND_API_KEY` — ver `EMAIL_RESEND.md`
-2. Pago manual `4242` en Chrome (opcional)
-3. Backup MySQL — ver `BACKUP_RAILWAY.md`
-4. Opcional IONOS: CNAME `www` → `a5p3tnti.up.railway.app` (destino nuevo Railway)
+### Hecho (19–20 nov)
+
+- Hosting Code, MySQL, Node 24, SMTP, DNS IONOS, PUBLIC_APP_URL, AutoSSL, JetBackup, Railway apagado, Stripe live
+
+---
+
+## Fase 5 — Qué hay que hacer
+
+Orden sugerido (no bloqueante):
+
+1. **Google Analytics + Search Console** + `sitemap.xml`.
+2. **Meta title/description** por página.
+3. **Migración de imágenes** a CDN propio (hoy hay dependencias Manus CDN).
+4. **Pagos de packs** (precio fijo) o flujo “solicitud de presupuesto”.
+5. **Recordatorios SMS/WhatsApp** (opcional).
+6. **Calendario Google API** real (hoy es link `calendar.google.com/render`).
 
 ---
 
 ## Fuentes
 
-- `DEPLOY.md` · `DEPLOY_RAIOLA.md` · `DNS_RAILWAY.md` · `EMAIL_RESEND.md` · `STRIPE.md` · `BACKUP_RAILWAY.md`
+- `DEPLOY_RAIOLA.md` · `MANUAL_CLIENTE_CONTRATAR_RAIOLA.md` · `.env.raiola.example` · `DEPLOY.md` · `STRIPE.md` · `Plan_Paso_a_Paso_Tu_Gestion_Legal.md`

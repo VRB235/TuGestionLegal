@@ -122,3 +122,17 @@ client/public/__manus__/version.json
 # Local file storage (S3 fallback)
 uploads/**
 !uploads/.gitkeep
+
+# Local Railway reuse (no commit)
+.env.railway.reuse
+
+# Secretos / credenciales (nunca al repo)
+SECRETOS*
+*Secretos*
+*secretos*
+Variables de Entorno y Secretos*
+.env.raiola
+.env.production
+*.secrets.md
+raiola-secrets.md
+
